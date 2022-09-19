@@ -4,6 +4,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const SKIP_STEP int = 10
+
 type ViewerActions = string
 
 const (
@@ -16,8 +18,8 @@ const (
 	MovePrev          ViewerActions = "move.prev"
 	MoveTop           ViewerActions = "move.top"
 	MoveLast          ViewerActions = "move.last"
-	MoveDirectoryNext ViewerActions = "move.directory.next"
-	MoveDirectoryPrev ViewerActions = "move.directory.prev"
+	MoveNextDirectory ViewerActions = "move.directory.next"
+	MovePrevDirectory ViewerActions = "move.directory.prev"
 	MoveSkipNext      ViewerActions = "move.skip.next"
 	MoveSkipPrev      ViewerActions = "move.skip.prev"
 
@@ -28,24 +30,24 @@ const (
 )
 
 var DEFAULT_KEY_MAPPING = map[ViewerActions][]string{
-	ModeInvert:      {"n"},
-	ModeRotateRight: {"r"},
-	ModeRotateLeft:  {"R"},
-	ModeReset:       {"c"},
+	ModeInvert:      {"N"},
+	ModeRotateRight: {"R"},
+	ModeRotateLeft:  {"L"},
+	ModeReset:       {"C"},
 
-	MoveNext:          {"l"},
-	MovePrev:          {"h"},
-	MoveTop:           {"^"},
-	MoveLast:          {"$"},
-	MoveDirectoryNext: {"j"},
-	MoveDirectoryPrev: {"k"},
-	MoveSkipNext:      {"w"},
-	MoveSkipPrev:      {"b"},
+	MoveNext:          {"L", "Left", "Space", "Enter"},
+	MovePrev:          {"H", "Right"},
+	MoveTop:           {"W"},
+	MoveLast:          {"E"},
+	MoveNextDirectory: {"J", "Up"},
+	MovePrevDirectory: {"K", "Down"},
+	MoveSkipNext:      {},
+	MoveSkipPrev:      {},
 
-	ImageZoomIn:  {"+"},
-	ImageZoomOut: {"-"},
+	ImageZoomIn:  {"I"},
+	ImageZoomOut: {"O"},
 
-	Quit: {"q"},
+	Quit: {"Q", "Escape"},
 }
 
 type KeyMapping struct {
@@ -87,12 +89,12 @@ type KeyActionParser struct {
 	lut map[string]ViewerActions
 }
 
-func NewActionMapping(config string) (error, *KeyActionParser) {
+func NewActionMapping(config string) (*KeyActionParser, error) {
 	mapping := KeyMapping{}
 
 	err := yaml.Unmarshal([]byte(config), &mapping)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	lut := make(map[string]ViewerActions)
 
@@ -114,17 +116,17 @@ func NewActionMapping(config string) (error, *KeyActionParser) {
 	insertLut(MovePrev, mapping.move.prev)
 	insertLut(MoveTop, mapping.move.top)
 	insertLut(MoveLast, mapping.move.last)
-	insertLut(MoveDirectoryNext, mapping.move.directory.next)
-	insertLut(MoveDirectoryPrev, mapping.move.directory.prev)
+	insertLut(MoveNextDirectory, mapping.move.directory.next)
+	insertLut(MovePrevDirectory, mapping.move.directory.prev)
 	insertLut(MoveSkipNext, mapping.move.skip.next)
 	insertLut(MoveSkipPrev, mapping.move.skip.prev)
 	insertLut(ImageZoomIn, mapping.image.zoom.in)
 	insertLut(ImageZoomOut, mapping.image.zoom.out)
 	insertLut(Quit, mapping.quit)
 
-	return nil, &KeyActionParser{
+	return &KeyActionParser{
 		lut: lut,
-	}
+	}, nil
 }
 
 func (obj *KeyActionParser) GetViewerAction(key string) *ViewerActions {

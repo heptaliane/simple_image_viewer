@@ -117,6 +117,21 @@ type PathProvider struct {
 	idx    int
 }
 
+func NewPathProvider(filepath string) (PathProvider, error) {
+	parent := GetParentDirectory(filepath)
+	files, err := GetFileList(parent, false)
+	if err != nil {
+		return PathProvider{}, nil
+	}
+
+	for i := range files {
+		if files[i] == filepath {
+			return PathProvider{parent: parent, files: files, idx: i}, nil
+		}
+	}
+	return PathProvider{parent: parent, files: files, idx: 0}, nil
+}
+
 func (provider *PathProvider) MoveTop() {
 	provider.idx = 0
 }
