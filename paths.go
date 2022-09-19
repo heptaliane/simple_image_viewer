@@ -6,11 +6,6 @@ import (
 	"sort"
 )
 
-type FileListData struct {
-	Parent string
-	Files  []string
-}
-
 func isDirectory(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
@@ -116,34 +111,74 @@ func getPrevDirectory(dirpath string) (*string, error) {
 	return nil, nil
 }
 
-func getFileData(data FileListData, get_directory_func func(string) (*string, error)) (*FileListData, error) {
-	dirpath := data.Parent
+type PathProvider struct {
+	parent string
+	files  []string
+	idx    int
+}
+
+func (provider *PathProvider) MoveTop() {
+	provider.idx = 0
+}
+
+func (provider *PathProvider) MoveLast() {
+	provider.idx = len(provider.files) - 1
+}
+
+func (provider *PathProvider) moveDirectory(get_directory_func func(string) (*string, error)) error {
 	for {
-		dirname, err := get_directory_func(dirpath)
-		if *dirname == dirpath {
-			break
+		dirname, err := get_directory_func(provider.parent)
+		if err != nil || dirname == nil {
+			return err
 		}
-		if err != nil {
-			return nil, err
+		if *dirname == provider.parent {
+			return err
 		}
 
 		files, err := GetFileList(*dirname, false)
+		if err != nil {
+			return err
+		}
 		if len(files) > 0 {
-			return &FileListData{
-				Parent: *dirname,
-				Files:  files,
-			}, nil
+			provider.parent = *dirname
+			provider.files = files
+			return nil
 		}
 
-		dirpath = *dirname
+		provider.parent = *dirname
 	}
-	return nil, nil
 }
 
-func GetNextFileData(data FileListData) (*FileListData, error) {
-	return getFileData(data, getNextDirectory)
+func (provider *PathProvider) MoveNextDirectory() error {
+	return provider.moveDirectory(getNextDirectory)
 }
 
-func GetPrevFileData(data FileListData) (*FileListData, error) {
-	return getFileData(data, getPrevDirectory)
+func (provider *PathProvider) MovePrevDirectory() error {
+	return provider.moveDirectory(getPrevDirectory)
+}
+
+func (provider *PathProvider) Move(n_images int) error {
+	provider.idx += n_images
+
+	if provider.idx < 0 {
+		err := provider.MovePrevDirectory()
+		if err != nil {
+			return err
+		}
+		provider.MoveLast()
+	}
+
+	if provider.idx >= len(provider.files) {
+		err := provider.MoveNextDirectory()
+		if err != nil {
+			return err
+		}
+		provider.MoveTop()
+	}
+
+	return nil
+}
+
+func (provider *PathProvider) Get() string {
+	return provider.files[provider.idx]
 }
