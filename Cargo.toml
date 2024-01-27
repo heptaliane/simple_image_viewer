@@ -12,6 +12,9 @@ wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 web-sys = "0.3"
 js-sys = "0.3"
+wasm-logger = "0.2.0"
+log = "0.4.20"
+tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys" }
 
 [workspace]
 members = ["src-tauri"]

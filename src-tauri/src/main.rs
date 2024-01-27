@@ -3,18 +3,16 @@
 
 use tauri::Manager;
 
-mod payload;
-
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
-            app.emit_to(
-                "main",
-                "image_uri",
-                payload::ImageURIPayload {
-                    uri: "public/tauri.svg".into(),
-                },
-            ).unwrap();
+            let app_handle = app.app_handle();
+            let _ = app.listen_global("fetch_image", move |_| {
+                let main_window = app_handle.get_window("main").unwrap();
+                main_window
+                    .emit("image_uri", "public/tauri.svg".to_string())
+                    .unwrap();
+            });
             Ok(())
         })
         .run(tauri::generate_context!())

@@ -1,18 +1,38 @@
+use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "event"])]
-    async fn listen(event: &str, handler: &Closure<dyn FnMut(JsValue)>) -> JsValue;
-}
-
+use crate::event::{emit, listen, Event};
 
 #[function_component]
 pub fn App() -> Html {
+    let path = use_state(|| String::new());
+
+    {
+        let path = path.clone();
+        spawn_local(async move {
+            let closure = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
+                let event = from_value::<Event<String>>(event).unwrap();
+                path.set(event.payload);
+            });
+            listen("image_uri", &closure).await;
+            closure.forget();
+        });
+    }
+
+    use_effect_with_deps(
+        move |_| {
+            spawn_local(async move {
+                emit("fetch_image", JsValue::NULL).await;
+            });
+        },
+        (),
+    );
+
     html! {
         <img
-            src="public/tauri.svg"
+            src={ (*path).clone() }
         />
     }
 }
