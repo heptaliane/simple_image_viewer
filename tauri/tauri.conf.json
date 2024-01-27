@@ -1,9 +1,9 @@
 {
   "build": {
-    "beforeDevCommand": "trunk serve",
-    "beforeBuildCommand": "trunk build",
+    "beforeDevCommand": "cd yew && trunk serve",
+    "beforeBuildCommand": "cd yew && trunk build",
     "devPath": "http://localhost:1420",
-    "distDir": "../dist",
+    "distDir": "../yew/dist",
     "withGlobalTauri": true
   },
   "package": {
@@ -21,7 +21,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.tauri.dev",
+      "identifier": "heptaliane.simple_image_viewer",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
