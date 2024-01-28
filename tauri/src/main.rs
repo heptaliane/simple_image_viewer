@@ -8,14 +8,17 @@ use tauri::Manager;
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
+            let args = app.get_cli_matches().unwrap().args;
+
             let app_handle = app.app_handle();
+            let filename = args["filename"].value.clone();
             let _ = app.listen_global(TauriEvent::RequestImage.as_ref(), move |_| {
                 let main_window = app_handle.get_window("main").unwrap();
                 main_window
                     .emit(
                         TauriEvent::ReceiveImage.as_ref(),
                         ImagePayload {
-                            uri: "public/tauri.svg".to_string(),
+                            uri: filename.as_str().unwrap().to_string(),
                         },
                     )
                     .unwrap();
