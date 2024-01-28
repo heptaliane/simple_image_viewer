@@ -6,6 +6,7 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::event::{emit, listen, Event};
+use crate::tauri::convert_file_src;
 
 #[function_component]
 pub fn App() -> Html {
@@ -16,7 +17,8 @@ pub fn App() -> Html {
         spawn_local(async move {
             let closure = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
                 let event = from_value::<Event<ImagePayload>>(event).unwrap();
-                path.set(event.payload.uri);
+                let uri = convert_file_src(&event.payload.uri, None);
+                path.set(uri.as_string().unwrap());
             });
             listen(TauriEvent::ReceiveImage.as_ref(), &closure).await;
             closure.forget();

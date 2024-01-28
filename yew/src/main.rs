@@ -1,5 +1,6 @@
 mod app;
 mod event;
+mod tauri;
 
 use app::App;
 
