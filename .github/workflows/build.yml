@@ -22,10 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          target: target/wasm32-unknown-unknown
+          target: wasm32-unknown-unknown
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
@@ -36,11 +36,11 @@ jobs:
       - name: Install trunk
         run: cargo install trunk
 
-      - uses: tauri-apps/tauri-actions@v0
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tarName: ${{ github.ref_name }}
+          tagName: ${{ github.ref_name }}
           releaseName: 'Release v__VERSION__'
           releaseDraft: true
           prerelease: false
