@@ -6,4 +6,16 @@ pub enum TauriEvent {
     RequestImage,
     #[strum(serialize = "receive_image")]
     ReceiveImage,
+    #[strum(serialize = "move_next")]
+    MoveNext,
+    #[strum(serialize = "move_prev")]
+    MovePrev,
+}
+
+#[derive(Clone, AsRefStr, PartialEq)]
+pub enum KeyboardEvent {
+    #[strum(serialize = "next_image")]
+    NextImage,
+    #[strum(serialize = "prev_image")]
+    PrevImage,
 }
