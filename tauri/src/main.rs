@@ -4,6 +4,7 @@
 use tauri::generate_handler;
 
 mod command;
+mod path;
 
 fn main() {
     tauri::Builder::default()

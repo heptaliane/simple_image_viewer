@@ -1,8 +1,9 @@
-use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use shared::payload::FilePathPayload;
 use tauri::command;
+
+use crate::path::get_child_files;
 
 #[command]
 pub fn get_files(path: String) -> Result<FilePathPayload, String> {
@@ -12,25 +13,23 @@ pub fn get_files(path: String) -> Result<FilePathPayload, String> {
         return Err(format!("Path `{:?}` does not exist", path));
     }
 
-    let directory = if path.is_dir() {
-        path
-    } else {
-        match path.parent() {
+    let directory = match path.is_dir() {
+        true => path,
+        false => match path.parent() {
             Some(parent) => parent,
             _ => return Err(format!("Cannot get parent directory of `{:?}`", path)),
-        }
+        },
     };
 
-    match fs::read_dir(&directory) {
-        Ok(entries) => {
-            let paths: Vec<String> = entries
-                .filter(|p| p.is_ok())
-                .map(|p| p.unwrap().path())
-                .filter(|p| p.is_file())
+    let sort = |p: &PathBuf| path;
+    let paths = get_child_files(&directory, &sort);
+    match paths {
+        Ok(entries) => Ok(FilePathPayload {
+            paths: entries
+                .iter()
                 .map(|p| p.to_string_lossy().into_owned())
-                .collect();
-            return Ok(FilePathPayload { paths: paths });
-        }
+                .collect(),
+        }),
         Err(e) => Err(format!("Error reading directory: `{:?}`", e)),
     }
 }
