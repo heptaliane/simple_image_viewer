@@ -10,6 +10,7 @@ mod path;
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let args = app.get_cli_matches().unwrap().args;
 
