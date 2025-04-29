@@ -10,6 +10,8 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(generate_handler![command::get_files])
+        .invoke_handler(generate_handler![command::get_next_directory])
+        .invoke_handler(generate_handler![command::get_prev_directory])
         .setup(|_app| {
             Ok(())
         })
