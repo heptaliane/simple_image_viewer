@@ -24,9 +24,9 @@
     "cli": {
       "args": [
         {
-          "name": "filenames",
+          "name": "filename",
+          "short": "f",
           "takesValue": true,
-          "multiple": true,
           "index": 1
         }
       ]
