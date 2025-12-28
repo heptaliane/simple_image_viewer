@@ -1,8 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use shared::event::TauriEvent;
-use tauri::{generate_handler, Emitter};
+use std::path::{Path, PathBuf};
+
+use tauri::{generate_handler, Manager};
 use tauri_plugin_cli::CliExt;
 
 mod command;
@@ -20,11 +21,8 @@ fn main() {
         .setup(|app| {
             let args = app.cli().matches()?.args;
             let filename = args["filename"].value.to_string();
-            app.emit(
-                TauriEvent::Initialize.as_ref(),
-                command::get_files(filename),
-            )?;
-
+            let sort = |p: &PathBuf| p.clone();
+            app.manage(path::FilePathRepository::new(Path::new(&filename), sort));
             Ok(())
         })
         .run(tauri::generate_context!())

@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::fs::read_dir;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 fn get_children<F, G, T>(
     parent: &Path,
@@ -113,6 +114,65 @@ pub fn get_directory(path: &Path) -> Result<PathBuf, String> {
             Some(parent) => Ok(parent.to_path_buf()),
             _ => Err(format!("Cannot get parent directory of `{:?}`", path)),
         },
+    }
+}
+
+pub trait PathRepository {
+    fn files(&self) -> Result<Vec<PathBuf>, String>;
+    fn next_directory(&self) -> Result<(), String>;
+    fn prev_directory(&self) -> Result<(), String>;
+}
+
+pub struct FilePathRepository<F, T>
+where
+    F: Fn(&PathBuf) -> T,
+    T: Ord,
+{
+    directory: Mutex<PathBuf>,
+    sort: F,
+}
+
+impl<F, T> FilePathRepository<F, T>
+where
+    F: Fn(&PathBuf) -> T,
+    T: Ord,
+{
+    pub fn new(path: &Path, sort: F) -> Self {
+        Self {
+            directory: Mutex::new(path.to_path_buf()),
+            sort: sort,
+        }
+    }
+}
+
+impl<F, T> PathRepository for FilePathRepository<F, T>
+where
+    F: Fn(&PathBuf) -> T,
+    T: Ord,
+{
+    fn files(&self) -> Result<Vec<PathBuf>, String> {
+        match self.directory.lock() {
+            Ok(directory) => get_child_files(&directory, &self.sort),
+            Err(err) => Err(err.to_string()),
+        }
+    }
+    fn next_directory(&self) -> Result<(), String> {
+        match self.directory.lock() {
+            Ok(mut directory) => {
+                *directory = next_directory(&directory, &self.sort)?;
+                Ok(())
+            }
+            Err(err) => Err(err.to_string()),
+        }
+    }
+    fn prev_directory(&self) -> Result<(), String> {
+        match self.directory.lock() {
+            Ok(mut directory) => {
+                *directory = prev_directory(&directory, &self.sort)?;
+                Ok(())
+            }
+            Err(err) => Err(err.to_string()),
+        }
     }
 }
 
