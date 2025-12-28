@@ -11,9 +11,12 @@ mod path;
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(generate_handler![command::get_files])
-        .invoke_handler(generate_handler![command::get_next_directory])
-        .invoke_handler(generate_handler![command::get_prev_directory])
+        .plugin(tauri_plugin_cli::init())
+        .invoke_handler(generate_handler![
+            command::get_files,
+            command::get_next_directory,
+            command::get_prev_directory,
+        ])
         .setup(|app| {
             let args = app.cli().matches()?.args;
             let filename = args["filename"].value.to_string();
