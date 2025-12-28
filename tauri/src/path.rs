@@ -102,6 +102,20 @@ where
     }
 }
 
+pub fn get_directory(path: &Path) -> Result<PathBuf, String> {
+    if !path.exists() {
+        return Err(format!("Path `{:?}` does not exist", path));
+    }
+
+    match path.is_dir() {
+        true => Ok(path.to_path_buf()),
+        false => match path.parent() {
+            Some(parent) => Ok(parent.to_path_buf()),
+            _ => Err(format!("Cannot get parent directory of `{:?}`", path)),
+        },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -314,5 +328,24 @@ mod tests {
         }
 
         let _ = tmp_dir.close();
+    }
+
+    #[test]
+    fn test_get_directory() {
+        let tmp_dir = init_test_filesystem();
+
+        let path = tmp_dir.path().join("a/a/a");
+        let actual = get_directory(&path);
+        assert!(actual.is_ok());
+        assert_eq!(actual.unwrap(), tmp_dir.path().join("a/a"));
+
+        let path = tmp_dir.path().join("a/a");
+        let actual = get_directory(&path);
+        assert!(actual.is_ok());
+        assert_eq!(actual.unwrap(), tmp_dir.path().join("a/a"));
+
+        let path = tmp_dir.path().join("a/c/a");
+        let actual = get_directory(&path);
+        assert!(actual.is_err());
     }
 }
