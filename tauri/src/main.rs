@@ -20,9 +20,14 @@ fn main() {
         ])
         .setup(|app| {
             let args = app.cli().matches()?.args;
-            let filename = args["filename"].value.to_string();
+            let filename = args["filename"]
+                .value
+                .as_str()
+                .expect("String arg is expected for filename");
             let sort = |p: &PathBuf| p.clone();
-            app.manage(path::FilePathRepository::new(Path::new(&filename), sort));
+            let repo = path::FilePathRepository::new(Path::new(&filename), sort);
+            let boxed: Box<dyn path::PathRepository> = Box::new(repo);
+            app.manage(boxed);
             Ok(())
         })
         .run(tauri::generate_context!())

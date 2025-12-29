@@ -1,9 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use shared::payload::FilePathPayload;
-use tauri::command;
+use tauri::{command, State};
 
-use crate::path::{get_child_files, get_directory, next_directory, prev_directory};
+use crate::path::PathRepository;
 
 fn create_file_path_payload(paths: Vec<PathBuf>) -> FilePathPayload {
     FilePathPayload {
@@ -15,30 +15,25 @@ fn create_file_path_payload(paths: Vec<PathBuf>) -> FilePathPayload {
 }
 
 #[command]
-pub fn get_files(path: String) -> Result<FilePathPayload, String> {
-    let sort = |p: &PathBuf| p.clone();
-    let directory = get_directory(Path::new(&path))?;
-
-    let paths = get_child_files(&directory, &sort)?;
+pub fn get_files(state: State<'_, Box<dyn PathRepository>>) -> Result<FilePathPayload, String> {
+    let paths = state.files()?;
     Ok(create_file_path_payload(paths))
 }
 
 #[command]
-pub fn get_next_directory(path: String) -> Result<FilePathPayload, String> {
-    let sort = |p: &PathBuf| p.clone();
-    let directory = get_directory(Path::new(&path))?;
-    let next_directory = next_directory(&directory, &sort)?;
-
-    let paths = get_child_files(&next_directory, &sort)?;
+pub fn get_next_directory(
+    state: State<'_, Box<dyn PathRepository>>,
+) -> Result<FilePathPayload, String> {
+    state.next_directory()?;
+    let paths = state.files()?;
     Ok(create_file_path_payload(paths))
 }
 
 #[command]
-pub fn get_prev_directory(path: String) -> Result<FilePathPayload, String> {
-    let sort = |p: &PathBuf| p.clone();
-    let directory = get_directory(Path::new(&path))?;
-    let next_directory = prev_directory(&directory, &sort)?;
-
-    let paths = get_child_files(&next_directory, &sort)?;
+pub fn get_prev_directory(
+    state: State<'_, Box<dyn PathRepository>>,
+) -> Result<FilePathPayload, String> {
+    state.prev_directory()?;
+    let paths = state.files()?;
     Ok(create_file_path_payload(paths))
 }

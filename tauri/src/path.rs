@@ -117,7 +117,7 @@ pub fn get_directory(path: &Path) -> Result<PathBuf, String> {
     }
 }
 
-pub trait PathRepository {
+pub trait PathRepository: Send + Sync {
     fn files(&self) -> Result<Vec<PathBuf>, String>;
     fn next_directory(&self) -> Result<(), String>;
     fn prev_directory(&self) -> Result<(), String>;
@@ -125,8 +125,8 @@ pub trait PathRepository {
 
 pub struct FilePathRepository<F, T>
 where
-    F: Fn(&PathBuf) -> T,
-    T: Ord,
+    F: Fn(&PathBuf) -> T + Send + Sync + 'static,
+    T: Ord + Send + Sync + 'static,
 {
     directory: Mutex<PathBuf>,
     sort: F,
@@ -134,21 +134,22 @@ where
 
 impl<F, T> FilePathRepository<F, T>
 where
-    F: Fn(&PathBuf) -> T,
-    T: Ord,
+    F: Fn(&PathBuf) -> T + Send + Sync + 'static,
+    T: Ord + Send + Sync + 'static,
 {
     pub fn new(path: &Path, sort: F) -> Self {
+        let p = get_directory(path).expect("Failed to read path");
         Self {
-            directory: Mutex::new(path.to_path_buf()),
-            sort: sort,
+            directory: Mutex::new(p),
+            sort,
         }
     }
 }
 
 impl<F, T> PathRepository for FilePathRepository<F, T>
 where
-    F: Fn(&PathBuf) -> T,
-    T: Ord,
+    F: Fn(&PathBuf) -> T + Send + Sync + 'static,
+    T: Ord + Send + Sync + 'static,
 {
     fn files(&self) -> Result<Vec<PathBuf>, String> {
         match self.directory.lock() {
