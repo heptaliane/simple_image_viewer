@@ -1,62 +1,47 @@
-use gloo::events::EventListener;
-use gloo::utils::document;
 use serde_wasm_bindgen::from_value;
-use shared::event;
-use shared::payload::ImagePayload;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::spawn_local;
+use shared::payload::FilePathPayload;
+use wasm_bindgen_futures::{spawn_local, JsFuture};
 use yew::prelude::*;
 
-use crate::event::{emit, listen, Event};
-use crate::keyboard::handle_keyboard_event;
-use crate::tauri::convert_file_src;
+use crate::tauri::{async_invoke_without_args, convert_file_src};
 
 #[function_component]
 pub fn App() -> Html {
-    let path = use_state(|| String::new());
+    let paths = use_state(|| vec![]);
+    let cursor = use_state(|| 0);
 
     {
-        let path = path.clone();
-        use_effect_with_deps(
-            move |_| {
-                {
-                    let path = path.clone();
-                    spawn_local(async move {
-                        let closure = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
-                            let event = from_value::<Event<ImagePayload>>(event).unwrap();
-                            let uri = convert_file_src(&event.payload.uri, None);
-                            path.set(uri.as_string().unwrap());
-                        });
-                        listen(event::TauriEvent::ReceiveImage.as_ref(), &closure).await;
-                        closure.forget();
-                    });
+        let paths = paths.clone();
+        use_effect_with((), move |_| {
+            let paths = paths.clone();
+            spawn_local(async move {
+                let promise = async_invoke_without_args("get_files");
+                match JsFuture::from(promise).await {
+                    Ok(val) => match from_value::<FilePathPayload>(val) {
+                        Ok(fetched) => {
+                            paths.set(fetched.paths);
+                        }
+                        Err(e) => {
+                            log::error!("Unexpected fetched files format: {:?}", e);
+                        }
+                    },
+                    Err(e) => {
+                        log::error!("Failed to fetch files: {:?}", e);
+                    }
                 }
-
-                spawn_local(async move {
-                    emit(event::TauriEvent::RequestImage.as_ref(), JsValue::NULL).await;
-                });
-
-                let listener = EventListener::new(&document(), "keydown", move |e| {
-                    handle_keyboard_event(
-                        [
-                            ("ArrowRight", event::KeyboardEvent::NextImage),
-                            ("ArrowLeft", event::KeyboardEvent::PrevImage),
-                        ]
-                        .iter()
-                        .map(|(k, e)| (k.to_string(), e.clone()))
-                        .collect(),
-                        e.dyn_ref::<web_sys::KeyboardEvent>().unwrap(),
-                    );
-                });
-                listener.forget();
-            },
-            (),
-        );
+            })
+        })
     }
 
     html! {
         <img
-            src={ (*path).clone() }
+            src={
+                if *cursor < paths.len() {
+                    convert_file_src(&paths[*cursor], None).as_string().unwrap()
+                } else {
+                    String::new()
+                }
+            }
         />
     }
 }

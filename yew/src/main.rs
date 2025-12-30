@@ -1,7 +1,7 @@
 mod app;
 mod event;
-mod tauri;
 mod keyboard;
+mod tauri;
 
 use app::App;
 
