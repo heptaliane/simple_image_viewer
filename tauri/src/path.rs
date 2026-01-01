@@ -117,13 +117,13 @@ pub fn get_directory(path: &Path) -> Result<PathBuf, String> {
     }
 }
 
-pub trait PathRepository: Send + Sync {
+pub trait DirectoryRepository: Send + Sync {
     fn files(&self) -> Result<Vec<PathBuf>, String>;
     fn next_directory(&self) -> Result<(), String>;
     fn prev_directory(&self) -> Result<(), String>;
 }
 
-pub struct FilePathRepository<F, T>
+pub struct FileDirectoryRepository<F, T>
 where
     F: Fn(&PathBuf) -> T + Send + Sync + 'static,
     T: Ord + Send + Sync + 'static,
@@ -132,7 +132,7 @@ where
     sort: F,
 }
 
-impl<F, T> FilePathRepository<F, T>
+impl<F, T> FileDirectoryRepository<F, T>
 where
     F: Fn(&PathBuf) -> T + Send + Sync + 'static,
     T: Ord + Send + Sync + 'static,
@@ -146,7 +146,7 @@ where
     }
 }
 
-impl<F, T> PathRepository for FilePathRepository<F, T>
+impl<F, T> DirectoryRepository for FileDirectoryRepository<F, T>
 where
     F: Fn(&PathBuf) -> T + Send + Sync + 'static,
     T: Ord + Send + Sync + 'static,

@@ -25,8 +25,8 @@ fn main() {
                 .as_str()
                 .expect("String arg is expected for filename");
             let sort = |p: &PathBuf| p.clone();
-            let repo = path::FilePathRepository::new(Path::new(&filename), sort);
-            let boxed: Box<dyn path::PathRepository> = Box::new(repo);
+            let repo = path::FileDirectoryRepository::new(Path::new(&filename), sort);
+            let boxed: Box<dyn path::DirectoryRepository> = Box::new(repo);
             app.manage(boxed);
             Ok(())
         })

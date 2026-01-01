@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use shared::payload::FilePathPayload;
 use tauri::{command, State};
 
-use crate::path::PathRepository;
+use crate::path::DirectoryRepository;
 
 fn create_file_path_payload(paths: Vec<PathBuf>) -> FilePathPayload {
     FilePathPayload {
@@ -15,14 +15,14 @@ fn create_file_path_payload(paths: Vec<PathBuf>) -> FilePathPayload {
 }
 
 #[command]
-pub fn get_files(state: State<'_, Box<dyn PathRepository>>) -> Result<FilePathPayload, String> {
+pub fn get_files(state: State<'_, Box<dyn DirectoryRepository>>) -> Result<FilePathPayload, String> {
     let paths = state.files()?;
     Ok(create_file_path_payload(paths))
 }
 
 #[command]
 pub fn get_next_directory(
-    state: State<'_, Box<dyn PathRepository>>,
+    state: State<'_, Box<dyn DirectoryRepository>>,
 ) -> Result<FilePathPayload, String> {
     state.next_directory()?;
     let paths = state.files()?;
@@ -31,7 +31,7 @@ pub fn get_next_directory(
 
 #[command]
 pub fn get_prev_directory(
-    state: State<'_, Box<dyn PathRepository>>,
+    state: State<'_, Box<dyn DirectoryRepository>>,
 ) -> Result<FilePathPayload, String> {
     state.prev_directory()?;
     let paths = state.files()?;
