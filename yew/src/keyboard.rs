@@ -18,7 +18,10 @@ fn prev_image() {
     });
 }
 
-pub fn handle_keyboard_event(keymap: HashMap<String, event::KeyboardEvent>, event: &web_sys::KeyboardEvent) {
+pub fn handle_keyboard_event(
+    keymap: HashMap<String, event::KeyboardEvent>,
+    event: &web_sys::KeyboardEvent,
+) {
     match keymap.get(&event.code()) {
         Some(event::KeyboardEvent::NextImage) => next_image(),
         Some(event::KeyboardEvent::PrevImage) => prev_image(),

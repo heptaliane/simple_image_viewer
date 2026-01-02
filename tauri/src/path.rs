@@ -118,9 +118,9 @@ pub fn get_directory(path: &Path) -> Result<PathBuf, String> {
 }
 
 pub trait DirectoryRepository: Send + Sync {
-    fn files(&self) -> Result<Vec<PathBuf>, String>;
-    fn next_directory(&self) -> Result<(), String>;
-    fn prev_directory(&self) -> Result<(), String>;
+    fn directory(&self) -> Result<PathBuf, String>;
+    fn next(&self) -> Result<(), String>;
+    fn prev(&self) -> Result<(), String>;
 }
 
 pub struct FileDirectoryRepository<F, T>
@@ -151,13 +151,13 @@ where
     F: Fn(&PathBuf) -> T + Send + Sync + 'static,
     T: Ord + Send + Sync + 'static,
 {
-    fn files(&self) -> Result<Vec<PathBuf>, String> {
+    fn directory(&self) -> Result<PathBuf, String> {
         match self.directory.lock() {
-            Ok(directory) => get_child_files(&directory, &self.sort),
-            Err(err) => Err(err.to_string()),
+            Ok(dir) => Ok(dir.to_path_buf()),
+            Err(e) => Err(e.to_string()),
         }
     }
-    fn next_directory(&self) -> Result<(), String> {
+    fn next(&self) -> Result<(), String> {
         match self.directory.lock() {
             Ok(mut directory) => {
                 *directory = next_directory(&directory, &self.sort)?;
@@ -166,7 +166,7 @@ where
             Err(err) => Err(err.to_string()),
         }
     }
-    fn prev_directory(&self) -> Result<(), String> {
+    fn prev(&self) -> Result<(), String> {
         match self.directory.lock() {
             Ok(mut directory) => {
                 *directory = prev_directory(&directory, &self.sort)?;
@@ -174,6 +174,127 @@ where
             }
             Err(err) => Err(err.to_string()),
         }
+    }
+}
+
+pub trait PathRepository: Send + Sync {
+    fn file(&self) -> Result<PathBuf, String>;
+    fn next(&self) -> Result<(), String>;
+    fn prev(&self) -> Result<(), String>;
+    fn move_cursor(&self, cursor: usize) -> Result<(), String>;
+}
+
+pub struct FilePathRepository<D, F, T>
+where
+    D: DirectoryRepository + 'static,
+    F: Fn(&PathBuf) -> T + Send + Sync + 'static,
+    T: Ord + Send + Sync + 'static,
+{
+    directory: D,
+    sort: F,
+    files: Mutex<Vec<PathBuf>>,
+    cursor: Mutex<usize>,
+}
+
+impl<D, F, T> FilePathRepository<D, F, T>
+where
+    D: DirectoryRepository + 'static,
+    F: Fn(&PathBuf) -> T + Send + Sync + 'static,
+    T: Ord + Send + Sync + 'static,
+{
+    pub fn new(directory: D, sort: F) -> Self {
+        let repo = Self {
+            directory,
+            sort,
+            files: Mutex::new(Vec::new()),
+            cursor: Mutex::new(0),
+        };
+        repo.update_files().expect("Failed to fetch initial files");
+        repo
+    }
+
+    fn n_files(&self) -> Result<usize, String> {
+        match self.files.lock() {
+            Ok(files) => Ok(files.len()),
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    fn update_files(&self) -> Result<(), String> {
+        let directory = self.directory.directory()?;
+        match self.files.lock() {
+            Ok(mut files) => {
+                *files = get_child_files(&directory, &self.sort)?;
+                Ok(())
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    fn move_cursor_unchecked(&self, new_cursor: usize) -> Result<(), String> {
+        match self.cursor.lock() {
+            Ok(mut cursor) => {
+                *cursor = new_cursor;
+                Ok(())
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
+}
+
+impl<D, F, T> PathRepository for FilePathRepository<D, F, T>
+where
+    D: DirectoryRepository + 'static,
+    F: Fn(&PathBuf) -> T + Send + Sync + 'static,
+    T: Ord + Send + Sync + 'static,
+{
+    fn file(&self) -> Result<PathBuf, String> {
+        match self.files.lock() {
+            Ok(files) => match self.cursor.lock() {
+                Ok(cursor) => match files.get(*cursor) {
+                    Some(file) => Ok(file.to_path_buf()),
+                    None => Err("".to_string()),
+                },
+                Err(e) => Err(e.to_string()),
+            },
+            Err(e) => Err(e.to_string()),
+        }
+    }
+    fn next(&self) -> Result<(), String> {
+        match self.cursor.lock() {
+            Ok(mut cursor) => {
+                if *cursor < self.n_files()? - 1 {
+                    *cursor += 1;
+                } else {
+                    self.directory.next()?;
+                    self.update_files()?;
+                    *cursor = 0;
+                }
+                Ok(())
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
+    fn prev(&self) -> Result<(), String> {
+        match self.cursor.lock() {
+            Ok(mut cursor) => {
+                if *cursor > 0 {
+                    *cursor -= 1;
+                } else {
+                    self.directory.prev()?;
+                    self.update_files()?;
+                    *cursor = self.n_files()? - 1;
+                }
+                Ok(())
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
+    fn move_cursor(&self, cursor: usize) -> Result<(), String> {
+        if self.n_files()? > cursor {
+            self.move_cursor_unchecked(cursor)?
+        }
+        Err("cursor is out of range".to_string())
     }
 }
 

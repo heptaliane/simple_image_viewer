@@ -14,9 +14,9 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_cli::init())
         .invoke_handler(generate_handler![
-            command::get_files,
-            command::get_next_directory,
-            command::get_prev_directory,
+            command::get_file,
+            command::get_next_file,
+            command::get_prev_file,
         ])
         .setup(|app| {
             let args = app.cli().matches()?.args;
@@ -25,8 +25,9 @@ fn main() {
                 .as_str()
                 .expect("String arg is expected for filename");
             let sort = |p: &PathBuf| p.clone();
-            let repo = path::FileDirectoryRepository::new(Path::new(&filename), sort);
-            let boxed: Box<dyn path::DirectoryRepository> = Box::new(repo);
+            let directory = path::FileDirectoryRepository::new(Path::new(&filename), sort);
+            let repo = path::FilePathRepository::new(directory, sort);
+            let boxed: Box<dyn path::PathRepository> = Box::new(repo);
             app.manage(boxed);
             Ok(())
         })

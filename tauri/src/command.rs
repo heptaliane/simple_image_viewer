@@ -1,39 +1,36 @@
 use std::path::PathBuf;
 
-use shared::payload::FilePathPayload;
+use shared::payload::FilePayload;
 use tauri::{command, State};
 
-use crate::path::DirectoryRepository;
+use crate::path::PathRepository;
 
-fn create_file_path_payload(paths: Vec<PathBuf>) -> FilePathPayload {
-    FilePathPayload {
-        paths: paths
-            .iter()
-            .map(|p| p.to_string_lossy().into_owned())
-            .collect(),
+fn create_file_payload(path: PathBuf) -> FilePayload {
+    FilePayload {
+        path: path.to_string_lossy().into_owned(),
     }
 }
 
 #[command]
-pub fn get_files(state: State<'_, Box<dyn DirectoryRepository>>) -> Result<FilePathPayload, String> {
-    let paths = state.files()?;
-    Ok(create_file_path_payload(paths))
+pub async fn get_file(state: State<'_, Box<dyn PathRepository>>) -> Result<FilePayload, String> {
+    let path = state.file()?;
+    Ok(create_file_payload(path))
 }
 
 #[command]
-pub fn get_next_directory(
-    state: State<'_, Box<dyn DirectoryRepository>>,
-) -> Result<FilePathPayload, String> {
-    state.next_directory()?;
-    let paths = state.files()?;
-    Ok(create_file_path_payload(paths))
+pub async fn get_next_file(
+    state: State<'_, Box<dyn PathRepository>>,
+) -> Result<FilePayload, String> {
+    state.next()?;
+    let path = state.file()?;
+    Ok(create_file_payload(path))
 }
 
 #[command]
-pub fn get_prev_directory(
-    state: State<'_, Box<dyn DirectoryRepository>>,
-) -> Result<FilePathPayload, String> {
-    state.prev_directory()?;
-    let paths = state.files()?;
-    Ok(create_file_path_payload(paths))
+pub async fn get_prev_file(
+    state: State<'_, Box<dyn PathRepository>>,
+) -> Result<FilePayload, String> {
+    state.prev()?;
+    let path = state.file()?;
+    Ok(create_file_payload(path))
 }
