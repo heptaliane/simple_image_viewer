@@ -1,36 +1,87 @@
 use std::path::PathBuf;
 
+use shared::event::TauriEvent;
 use shared::payload::FilePayload;
-use tauri::{command, State};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::path::PathRepository;
 
-fn create_file_payload(path: PathBuf) -> FilePayload {
-    FilePayload {
-        path: path.to_string_lossy().into_owned(),
+fn send_file(app: &AppHandle, path: PathBuf) -> Result<(), String> {
+    match app.emit(
+        TauriEvent::ReceiveFile.as_ref(),
+        FilePayload {
+            path: path.to_string_lossy().into_owned(),
+        },
+    ) {
+        Err(e) => Err(e.to_string()),
+        _ => Ok(()),
     }
 }
 
-#[command]
-pub async fn get_file(state: State<'_, Box<dyn PathRepository>>) -> Result<FilePayload, String> {
-    let path = state.file()?;
-    Ok(create_file_payload(path))
+pub fn request_file(app: &AppHandle) {
+    match app.state::<Box<dyn PathRepository>>().file() {
+        Ok(path) => match send_file(app, path) {
+            Err(e) => println!(
+                "[ERROR] Event '{:?}' failed: {:?}",
+                TauriEvent::RequestFile.as_ref(),
+                e
+            ),
+            _ => (),
+        },
+        Err(e) => println!(
+            "[ERROR] Event '{:?}' failed: {:?}",
+            TauriEvent::RequestFile.as_ref(),
+            e
+        ),
+    }
 }
-
-#[command]
-pub async fn get_next_file(
-    state: State<'_, Box<dyn PathRepository>>,
-) -> Result<FilePayload, String> {
-    state.next()?;
-    let path = state.file()?;
-    Ok(create_file_payload(path))
+pub fn next_file(app: &AppHandle) {
+    let repo = app.state::<Box<dyn PathRepository>>();
+    match repo.next() {
+        Err(e) => println!(
+            "[ERROR] Event '{:?}' failed: {:?}",
+            TauriEvent::NextFile.as_ref(),
+            e
+        ),
+        _ => match repo.file() {
+            Ok(path) => match send_file(app, path) {
+                Err(e) => println!(
+                    "[ERROR] Event '{:?}' failed: {:?}",
+                    TauriEvent::NextFile.as_ref(),
+                    e
+                ),
+                _ => (),
+            },
+            Err(e) => println!(
+                "[ERROR] Event '{:?}' failed: {:?}",
+                TauriEvent::NextFile.as_ref(),
+                e
+            ),
+        },
+    }
 }
-
-#[command]
-pub async fn get_prev_file(
-    state: State<'_, Box<dyn PathRepository>>,
-) -> Result<FilePayload, String> {
-    state.prev()?;
-    let path = state.file()?;
-    Ok(create_file_payload(path))
+pub fn prev_file(app: &AppHandle) {
+    let repo = app.state::<Box<dyn PathRepository>>();
+    match repo.prev() {
+        Err(e) => println!(
+            "[ERROR] Event '{:?}' failed: {:?}",
+            TauriEvent::PrevFile.as_ref(),
+            e
+        ),
+        _ => match repo.file() {
+            Ok(path) => match send_file(app, path) {
+                Err(e) => println!(
+                    "[ERROR] Event '{:?}' failed: {:?}",
+                    TauriEvent::PrevFile.as_ref(),
+                    e
+                ),
+                _ => (),
+            },
+            Err(e) => println!(
+                "[ERROR] Event '{:?}' failed: {:?}",
+                TauriEvent::PrevFile.as_ref(),
+                e
+            ),
+        },
+    }
 }

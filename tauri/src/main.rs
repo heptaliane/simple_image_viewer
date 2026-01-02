@@ -3,7 +3,8 @@
 
 use std::path::{Path, PathBuf};
 
-use tauri::{generate_handler, Manager};
+use shared::event::TauriEvent;
+use tauri::{Listener, Manager};
 use tauri_plugin_cli::CliExt;
 
 mod command;
@@ -13,12 +14,8 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_cli::init())
-        .invoke_handler(generate_handler![
-            command::get_file,
-            command::get_next_file,
-            command::get_prev_file,
-        ])
         .setup(|app| {
+            // Setup Repository
             let args = app.cli().matches()?.args;
             let filename = args["filename"]
                 .value
@@ -29,6 +26,27 @@ fn main() {
             let repo = path::FilePathRepository::new(directory, sort);
             let boxed: Box<dyn path::PathRepository> = Box::new(repo);
             app.manage(boxed);
+
+            // Setup listener
+            {
+                let handle = app.handle().clone();
+                app.listen(TauriEvent::RequestFile.as_ref(), move |_| {
+                    command::request_file(&handle);
+                });
+            }
+            {
+                let handle = app.handle().clone();
+                app.listen(TauriEvent::NextFile.as_ref(), move |_| {
+                    command::next_file(&handle);
+                });
+            }
+            {
+                let handle = app.handle().clone();
+                app.listen(TauriEvent::PrevFile.as_ref(), move |_| {
+                    command::prev_file(&handle);
+                });
+            }
+
             Ok(())
         })
         .run(tauri::generate_context!())

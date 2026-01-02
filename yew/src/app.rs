@@ -1,36 +1,49 @@
-use serde_wasm_bindgen::from_value;
+use gloo::events::EventListener;
+use gloo::utils::document;
+use shared::event;
 use shared::payload::FilePayload;
-use wasm_bindgen::JsValue;
-use wasm_bindgen_futures::{spawn_local, JsFuture};
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys;
 use yew::prelude::*;
 
-use crate::tauri::{async_invoke_without_args, convert_file_src};
+use crate::keyboard::handle_keyboard_event;
+use crate::tauri::{convert_file_src, emit_without_args, listen};
 
 #[function_component]
 pub fn App() -> Html {
     let path = use_state(|| JsValue::from_str(""));
 
     {
+        use_effect_with((), move |_| {
+            emit_without_args(event::TauriEvent::RequestFile.as_ref());
+        });
+    }
+    {
         let path = path.clone();
         use_effect_with((), move |_| {
-            let path = path.clone();
-            spawn_local(async move {
-                let promise = async_invoke_without_args("get_file");
-                match JsFuture::from(promise).await {
-                    Ok(val) => match from_value::<FilePayload>(val) {
-                        Ok(fetched) => {
-                            path.set(convert_file_src(&fetched.path, None));
-                        }
-                        Err(e) => {
-                            log::error!("Unexpected fetched files format: {:?}", e);
-                        }
-                    },
-                    Err(e) => {
-                        log::error!("Failed to fetch files: {:?}", e);
-                    }
-                }
-            })
+            listen(
+                event::TauriEvent::ReceiveFile.as_ref(),
+                move |p: FilePayload| {
+                    log::info!("path: {:?}", p.path);
+                    path.set(convert_file_src(&p.path, None));
+                },
+            );
         })
+    }
+    {
+        let listener = EventListener::new(&document(), "keydown", move |event| {
+            handle_keyboard_event(
+                [
+                    ("ArrowRight", event::KeyboardEvent::NextImage),
+                    ("ArrowLeft", event::KeyboardEvent::PrevImage),
+                ]
+                .iter()
+                .map(|(k, e)| (k.to_string(), e.clone()))
+                .collect(),
+                event.dyn_ref::<web_sys::KeyboardEvent>().unwrap(),
+            );
+        });
+        listener.forget();
     }
 
     html! {

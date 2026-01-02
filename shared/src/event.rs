@@ -2,16 +2,14 @@ use strum_macros::AsRefStr;
 
 #[derive(Clone, AsRefStr, PartialEq, Eq)]
 pub enum TauriEvent {
-    #[strum(serialize = "initialize")]
-    Initialize,
-    #[strum(serialize = "request_image")]
-    RequestImage,
-    #[strum(serialize = "receive_image")]
-    ReceiveImage,
-    #[strum(serialize = "move_next")]
-    MoveNext,
-    #[strum(serialize = "move_prev")]
-    MovePrev,
+    #[strum(serialize = "request_file")]
+    RequestFile,
+    #[strum(serialize = "receive_file")]
+    ReceiveFile,
+    #[strum(serialize = "next_file")]
+    NextFile,
+    #[strum(serialize = "prev_file")]
+    PrevFile,
 }
 
 #[derive(Clone, AsRefStr, PartialEq)]
