@@ -24,26 +24,27 @@ pub fn App() -> Html {
             listen(
                 event::TauriEvent::ReceiveFile.as_ref(),
                 move |p: FilePayload| {
-                    log::info!("path: {:?}", p.path);
                     path.set(convert_file_src(&p.path, None));
                 },
             );
-        })
+        });
     }
     {
-        let listener = EventListener::new(&document(), "keydown", move |event| {
-            handle_keyboard_event(
-                [
-                    ("ArrowRight", event::KeyboardEvent::NextImage),
-                    ("ArrowLeft", event::KeyboardEvent::PrevImage),
-                ]
-                .iter()
-                .map(|(k, e)| (k.to_string(), e.clone()))
-                .collect(),
-                event.dyn_ref::<web_sys::KeyboardEvent>().unwrap(),
-            );
+        use_effect_with((), move |_| {
+            let listener = EventListener::new(&document(), "keydown", move |event| {
+                handle_keyboard_event(
+                    [
+                        ("ArrowRight", event::KeyboardEvent::NextImage),
+                        ("ArrowLeft", event::KeyboardEvent::PrevImage),
+                    ]
+                    .iter()
+                    .map(|(k, e)| (k.to_string(), e.clone()))
+                    .collect(),
+                    event.dyn_ref::<web_sys::KeyboardEvent>().unwrap(),
+                );
+            });
+            listener.forget();
         });
-        listener.forget();
     }
 
     html! {

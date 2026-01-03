@@ -46,7 +46,7 @@ pub fn emit_without_args(event: &str) {
     spawn_local(async move {
         match JsFuture::from(tauri_emit(&event, &JsValue::NULL)).await {
             Err(e) => log::error!("[emit] ({:?}) {:?}", event, e),
-            _ => log::info!("completed"),
+            _ => (),
         }
     })
 }
