@@ -10,6 +10,10 @@ pub enum TauriEvent {
     NextFile,
     #[strum(serialize = "prev_file")]
     PrevFile,
+    #[strum(serialize = "next_directory")]
+    NextDirectory,
+    #[strum(serialize = "prev_directory")]
+    PrevDirectory,
 }
 
 #[derive(Clone, AsRefStr, PartialEq)]

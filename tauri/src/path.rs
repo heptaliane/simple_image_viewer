@@ -181,6 +181,8 @@ pub trait PathRepository: Send + Sync {
     fn file(&self) -> Result<PathBuf, String>;
     fn next(&self) -> Result<(), String>;
     fn prev(&self) -> Result<(), String>;
+    fn next_directory(&self) -> Result<(), String>;
+    fn prev_directory(&self) -> Result<(), String>;
     fn move_cursor(&self, cursor: usize) -> Result<(), String>;
 }
 
@@ -289,6 +291,16 @@ where
             }
             Err(e) => Err(e.to_string()),
         }
+    }
+    fn next_directory(&self) -> Result<(), String> {
+        self.directory.next()?;
+        self.update_files()?;
+        self.move_cursor_unchecked(0)
+    }
+    fn prev_directory(&self) -> Result<(), String> {
+        self.directory.prev()?;
+        self.update_files()?;
+        self.move_cursor_unchecked(self.n_files()? - 1)
     }
     fn move_cursor(&self, cursor: usize) -> Result<(), String> {
         if self.n_files()? > cursor {

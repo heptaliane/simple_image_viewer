@@ -46,6 +46,18 @@ fn main() {
                     command::prev_file(&handle);
                 });
             }
+            {
+                let handle = app.handle().clone();
+                app.listen(TauriEvent::NextDirectory.as_ref(), move |_| {
+                    command::next_directory(&handle);
+                });
+            }
+            {
+                let handle = app.handle().clone();
+                app.listen(TauriEvent::PrevDirectory.as_ref(), move |_| {
+                    command::prev_directory(&handle);
+                });
+            }
 
             Ok(())
         })
