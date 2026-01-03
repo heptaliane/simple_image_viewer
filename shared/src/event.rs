@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use strum_macros::AsRefStr;
 
 #[derive(Clone, AsRefStr, PartialEq, Eq)]
@@ -16,7 +17,7 @@ pub enum TauriEvent {
     PrevDirectory,
 }
 
-#[derive(Clone, AsRefStr, PartialEq)]
+#[derive(Clone, AsRefStr, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub enum KeyboardEvent {
     #[strum(serialize = "next_image")]
     NextImage,

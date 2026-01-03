@@ -25,9 +25,13 @@
       "args": [
         {
           "name": "filename",
-          "short": "f",
           "takesValue": true,
           "index": 1
+        },
+        {
+          "name": "config",
+          "short": "c",
+          "takesValue": true
         }
       ]
     }

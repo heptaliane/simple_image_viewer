@@ -8,6 +8,7 @@ use tauri::{Listener, Manager};
 use tauri_plugin_cli::CliExt;
 
 mod command;
+mod config;
 mod path;
 
 fn main() {
@@ -15,12 +16,21 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_cli::init())
         .setup(|app| {
-            // Setup Repository
             let args = app.cli().matches()?.args;
-            let filename = args["filename"]
-                .value
-                .as_str()
+            let filename = args
+                .get("filename")
+                .and_then(|v| v.value.as_str())
                 .expect("String arg is expected for filename");
+            let config_path = args
+                .get("config")
+                .and_then(|v| v.value.as_str())
+                .unwrap_or("config.json");
+
+            // Setup Config
+            let config = config::ConfigManager::new(config_path.to_string());
+            app.manage(config);
+
+            // Setup Repository
             let sort = |p: &PathBuf| p.clone();
             let directory = path::FileDirectoryRepository::new(Path::new(&filename), sort);
             let repo = path::FilePathRepository::new(directory, sort);
