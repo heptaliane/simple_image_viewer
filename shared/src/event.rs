@@ -22,4 +22,8 @@ pub enum KeyboardEvent {
     NextImage,
     #[strum(serialize = "prev_image")]
     PrevImage,
+    #[strum(serialize = "next_directory")]
+    NextDirectory,
+    #[strum(serialize = "prev_directory")]
+    PrevDirectory,
 }

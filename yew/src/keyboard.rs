@@ -12,6 +12,14 @@ fn prev_image() {
     emit_without_args(TauriEvent::PrevFile.as_ref());
 }
 
+fn next_directory() {
+    emit_without_args(TauriEvent::NextDirectory.as_ref());
+}
+
+fn prev_directory() {
+    emit_without_args(TauriEvent::PrevDirectory.as_ref())
+}
+
 pub fn handle_keyboard_event(
     keymap: HashMap<String, KeyboardEvent>,
     event: &web_sys::KeyboardEvent,
@@ -19,6 +27,8 @@ pub fn handle_keyboard_event(
     match keymap.get(&event.code()) {
         Some(KeyboardEvent::NextImage) => next_image(),
         Some(KeyboardEvent::PrevImage) => prev_image(),
+        Some(KeyboardEvent::NextDirectory) => next_directory(),
+        Some(KeyboardEvent::PrevDirectory) => prev_directory(),
         _ => (),
     }
 }

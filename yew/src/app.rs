@@ -36,6 +36,8 @@ pub fn App() -> Html {
                     [
                         ("ArrowRight", event::KeyboardEvent::NextImage),
                         ("ArrowLeft", event::KeyboardEvent::PrevImage),
+                        ("ArrowDown", event::KeyboardEvent::NextDirectory),
+                        ("ArrowUp", event::KeyboardEvent::PrevDirectory),
                     ]
                     .iter()
                     .map(|(k, e)| (k.to_string(), e.clone()))
