@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
+use shared::config::ViewerConfig;
 use shared::event::TauriEvent;
 use shared::payload::FilePayload;
 use tauri::{AppHandle, Emitter, Manager};
 
+use crate::config::ConfigManager;
 use crate::path::PathRepository;
 
 fn send_file(app: &AppHandle, path: PathBuf) -> Result<(), String> {
@@ -17,6 +19,13 @@ fn send_file(app: &AppHandle, path: PathBuf) -> Result<(), String> {
         _ => Ok(()),
     }
 }
+fn send_config(app: &AppHandle, config: &ViewerConfig) -> Result<(), String> {
+    match app.emit(TauriEvent::ReceiveConfig.as_ref(), config) {
+        Err(e) => Err(e.to_string()),
+        _ => Ok(()),
+    }
+}
+
 fn handle_update_path_result(
     app: &AppHandle,
     repo: &Box<dyn PathRepository>,
@@ -27,6 +36,23 @@ fn handle_update_path_result(
         Err(e) => println!("[ERROR] Event '{:?}' failed: {:?}", event.as_ref(), e),
         _ => match repo.file() {
             Ok(path) => match send_file(app, path) {
+                Err(e) => println!("[ERROR] Event '{:?}' failed: {:?}", event.as_ref(), e),
+                _ => (),
+            },
+            Err(e) => println!("[ERROR] Event '{:?}' failed: {:?}", event.as_ref(), e),
+        },
+    }
+}
+fn handle_update_config_result(
+    app: &AppHandle,
+    cm: &ConfigManager,
+    event: TauriEvent,
+    result: Result<(), String>,
+) {
+    match result {
+        Err(e) => println!("[ERROR] Event '{:?}' failed: {:?}", event.as_ref(), e),
+        _ => match cm.get_config() {
+            Ok(config) => match send_config(app, &config) {
                 Err(e) => println!("[ERROR] Event '{:?}' failed: {:?}", event.as_ref(), e),
                 _ => (),
             },
@@ -59,4 +85,10 @@ pub fn prev_directory(app: &AppHandle) {
     let repo = app.state::<Box<dyn PathRepository>>();
     let result = repo.prev_directory();
     handle_update_path_result(app, &repo, TauriEvent::PrevDirectory, result);
+}
+
+pub fn request_config(app: &AppHandle) {
+    let cm = app.state::<ConfigManager>();
+    let result = Ok(());
+    handle_update_config_result(app, &cm, TauriEvent::RequestConfig, result);
 }

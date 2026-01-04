@@ -68,6 +68,12 @@ fn main() {
                     command::prev_directory(&handle);
                 });
             }
+            {
+                let handle = app.handle().clone();
+                app.listen(TauriEvent::RequestConfig.as_ref(), move |_| {
+                    command::request_config(&handle);
+                });
+            }
 
             Ok(())
         })

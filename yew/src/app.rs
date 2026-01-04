@@ -1,12 +1,9 @@
-use gloo::events::EventListener;
-use gloo::utils::document;
 use shared::event;
 use shared::payload::FilePayload;
-use wasm_bindgen::{JsCast, JsValue};
-use web_sys;
+use wasm_bindgen::JsValue;
 use yew::prelude::*;
 
-use crate::keyboard::handle_keyboard_event;
+use crate::keyboard::KeyboardEventHandler;
 use crate::tauri::{convert_file_src, emit_without_args, listen};
 
 #[function_component]
@@ -31,21 +28,8 @@ pub fn App() -> Html {
     }
     {
         use_effect_with((), move |_| {
-            let listener = EventListener::new(&document(), "keydown", move |event| {
-                handle_keyboard_event(
-                    [
-                        ("ArrowRight", event::KeyboardEvent::NextImage),
-                        ("ArrowLeft", event::KeyboardEvent::PrevImage),
-                        ("ArrowDown", event::KeyboardEvent::NextDirectory),
-                        ("ArrowUp", event::KeyboardEvent::PrevDirectory),
-                    ]
-                    .iter()
-                    .map(|(k, e)| (k.to_string(), e.clone()))
-                    .collect(),
-                    event.dyn_ref::<web_sys::KeyboardEvent>().unwrap(),
-                );
-            });
-            listener.forget();
+            let handler = KeyboardEventHandler::new();
+            handler.listen();
         });
     }
 

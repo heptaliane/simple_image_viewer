@@ -15,6 +15,10 @@ pub enum TauriEvent {
     NextDirectory,
     #[strum(serialize = "prev_directory")]
     PrevDirectory,
+    #[strum(serialize = "request_config")]
+    RequestConfig,
+    #[strum(serialize = "receive_config")]
+    ReceiveConfig,
 }
 
 #[derive(Clone, AsRefStr, PartialEq, Eq, Hash, Deserialize, Serialize)]
