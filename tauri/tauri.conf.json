@@ -18,7 +18,7 @@
   },
   "productName": "simple_image_viewer",
   "mainBinaryName": "simple_image_viewer",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "identifier": "heptaliane.simple-image-viewer",
   "plugins": {
     "cli": {
