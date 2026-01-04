@@ -3,6 +3,7 @@ use shared::payload::FilePayload;
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
 
+use crate::config::ConfigHandler;
 use crate::keyboard::KeyboardEventHandler;
 use crate::tauri::{convert_file_src, emit_without_args, listen};
 
@@ -28,8 +29,13 @@ pub fn App() -> Html {
     }
     {
         use_effect_with((), move |_| {
-            let handler = KeyboardEventHandler::new();
-            handler.listen();
+            let ke_handler = KeyboardEventHandler::new();
+            ke_handler.listen();
+
+            let mut cfg_handler = ConfigHandler::new();
+            cfg_handler.add_listener(Box::new(move |config| ke_handler.load_config(config)));
+            cfg_handler.listen();
+            cfg_handler.sync();
         });
     }
 
